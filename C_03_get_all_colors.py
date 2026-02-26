@@ -1,7 +1,16 @@
 import csv
 import random
 
-from Tools.scripts.summarize_stats import print_title
+def round_ans(val):
+    """
+    Rounds numbers to nearest integer
+    number to rounded.
+    rounded number (an integer)
+    """
+    var_rounded = (val * 2 + 1) // 2
+    raw_rounded = "{:.0f}".format(var_rounded)
+    return int(raw_rounded)
+
 
 # Retrieve colors from csv file and put them in a list
 file = open("00_colour_list_hex_v3.csv", "r")
@@ -30,3 +39,8 @@ print(color_scores)
 
 # change scores to integers
 int_scores = [int(x) for x in color_scores]
+int_scores.sort()
+
+median = (int_scores[1] + int_scores[2]) / 2
+median = round_ans(median)
+print("median", median)
