@@ -200,6 +200,9 @@ class Play:
         self.game_frame = Frame(self.play_box)
         self.game_frame.grid(padx=10, pady=10)
 
+        # If users press the 'x' on the game window, end the entire game!
+        self.play_box.protocol('WM_DELETE_WINDOW', root.destroy)
+
         # body font for most labels...
         body_font = ("Arial", 12)
 
@@ -285,8 +288,6 @@ class Play:
 
         # retrieve number of rounds played, add one to it and configure heading
         rounds_played = self.rounds_played.get()
-        self.rounds_played.set(rounds_played)
-
         rounds_wanted = self.rounds_wanted.get()
 
         # get round colors and median score...
@@ -331,7 +332,7 @@ class Play:
         rounds_played += 1
         self.rounds_played.set(rounds_played)
 
-        rounds_won = self.rounds_won.set(rounds_played)
+        rounds_won = self.rounds_won.get()
 
         # alternate way to get button name. Good for if buttons have been scrambled
         color_name = self.color_button_ref[user_choice].cget('text')
@@ -364,15 +365,28 @@ class Play:
         self.stats_button.config(state=NORMAL)
 
         # check to see if game is over
+        rounds_played = self.rounds_played.get()
         rounds_wanted = self.rounds_wanted.get()
 
+        # Code for when the game ends!
         if rounds_played == rounds_wanted:
 
-            # work out success rate 
+            # work out success rate
+            rounds_played = len(self.all_scores_list)
+            success_rate = rounds_won / rounds_played * 100
+            success_string = ("fSuccess Rate: "
+                             f"f{rounds_won}/ {rounds_played} "
+                             f"({success_rate:.0f}%)")
 
             # Configure 'end game' labels / buttons
+            self.heading_label.config(text="Game Over")
+            self.target_label.config(text=success_string)
+            self.choose_label.config(text="Please click the stats "
+                                          "button for more info.")
             self.next_button.config(state=DISABLED, text="Game Over")
-            self.end_game_button.config(text= "Play Again", bg="#006600")
+            self.stats_button.config(bg="#990000")
+            self.end_game_button.config(text= "Play Again", bg="#006600",
+                                        compound="right", width=18)
 
         for item in self.color_button_ref:
             item.config(state=DISABLED)
@@ -389,7 +403,10 @@ class Play:
             (so that users can't create multiple help boxes)
             :return:
             """
-            DisplayHints(self)
+            # check we have played at least one round so that
+            # stats button is not enabled in error
+            rounds_played = self.rounds_played.get()
+            DisplayHints(self, rounds_played)
 
 
     def to_stats(self):
@@ -404,7 +421,6 @@ class Play:
                         self.all_high_score_list]
 
         Stats(self, stats_bundle)
-
 
 class Stats:
     """
@@ -423,7 +439,9 @@ class Stats:
 
         self.stats_box = Toplevel()
 
-        # disable help button
+        # disable other buttons
+        partner.hints_button.config(state=DISABLED)
+        partner.end_game_button.config(state=DISABLED)
         partner.stats_button.config(state=DISABLED)
 
         # If users press cross at top, closes help and
@@ -510,19 +528,24 @@ class Stats:
             """
             Closes stats dialogue box (and enables stats button)
             """
-            # Put stats button back to normal...
+            # Put all buttons back to normal...
+            partner.hints_button.config(state=NORMAL)
+            partner.end_game_button.config(state=NORMAL)
             partner.stats_button.config(state=NORMAL)
             self.stats_box.destroy()
 
 class DisplayHints:
 
-        def __init__(self, partner):
+        def __init__(self, partner, rounds_played):
+            self.rounds_played = rounds_played
             # setup dialogue box and background color
             background = "#ffe6cc"
             self.help_box = Toplevel()
 
-            # disable help button
+            # disable the other buttons
             partner.hints_button.config(state=DISABLED)
+            partner.end_game_button.config(state=DISABLED)
+            partner.stats_button.config(state=DISABLED)
 
             # If users press cross at top, closes help and
             # 'releases' help button
@@ -568,7 +591,18 @@ class DisplayHints:
             """
             # Put help button back to normal...
             partner.hints_button.config(state=NORMAL)
+            partner.end_game_button.config(state=NORMAL)
+            partner.stats_button.config(state=NORMAL)
+            # only enable stats button if we have
+            # played at least one round
+            if self.rounds_played >= 1:
+                partner.stats_button.config(state=NORMAL)
+
+
+
             self.help_box.destroy()
+
+
 
 # main routine
 if __name__ == "__main__":
